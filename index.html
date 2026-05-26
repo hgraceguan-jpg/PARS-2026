@@ -118,6 +118,26 @@ textarea.field-input{resize:vertical;min-height:72px;}
 .rating-sel.sel-good-deep{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23ffffff' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center,#0B5E2B;border-color:#0B5E2B;color:#fff;font-weight:700;box-shadow:0 0 0 2px rgba(11,94,43,0.18);}
 .remarks-inp{border:1.5px solid var(--border);border-radius:5px;padding:7px 10px;font-size:12px;font-family:inherit;color:var(--black);background:#FAFAFA;outline:none;width:100%;transition:border-color .15s;min-height:70px;resize:vertical;line-height:1.5;}
 .remarks-inp:focus{border-color:var(--red);box-shadow:0 0 0 2px rgba(204,0,0,.1);}
+.remarks-inp.remark-missing{border-color:#CC0000;background:#FFF5F5;box-shadow:0 0 0 2px rgba(204,0,0,.15);}
+
+/* Inline red "*" overlay shown when a remark is empty. Hidden when filled. */
+.remark-wrap{position:relative;}
+.remark-wrap .remark-star{
+  position:absolute;
+  top:5px; right:7px;
+  font-size:12px;
+  font-weight:800;
+  line-height:1;
+  color:#CC0000;
+  pointer-events:none;
+  text-shadow:0 0 3px rgba(255,255,255,0.9);
+  animation:remark-star-pulse 1.4s ease-in-out infinite;
+}
+.remark-wrap.has-content .remark-star{display:none;}
+@keyframes remark-star-pulse{
+  0%,100%{opacity:1;transform:scale(1);}
+  50%{opacity:0.55;transform:scale(0.92);}
+}
 
 /* ── SCORE TILES ── */
 .score-bar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
@@ -168,6 +188,40 @@ textarea.field-input{resize:vertical;min-height:72px;}
 .btn-primary{background:var(--red);color:#fff;box-shadow:0 4px 14px rgba(204,0,0,.3);}
 .btn-primary:hover{background:var(--red-dark);}
 .btn-primary:disabled{opacity:.6;cursor:not-allowed;}
+
+/* ── STICKY ACTION BAR (always-visible Submit) ── */
+#sticky-action-bar{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  background:rgba(255,255,255,0.97);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  border-top:1.5px solid var(--border);
+  box-shadow:0 -4px 16px rgba(0,0,0,.08);
+  padding:10px 16px;
+  display:none;
+  z-index:90;
+  justify-content:flex-end;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+#sticky-action-bar.show{display:flex;}
+#sticky-action-bar .sab-status{
+  flex:1;
+  min-width:140px;
+  font-size:11.5px;
+  color:var(--gray);
+  font-weight:600;
+}
+#sticky-action-bar .sab-status strong{color:var(--black);font-weight:800;}
+#sticky-action-bar .btn{padding:9px 20px;font-size:12.5px;}
+@media(max-width:560px){
+  #sticky-action-bar .sab-status{display:none;}
+  #sticky-action-bar .btn{padding:8px 14px;font-size:12px;}
+}
+/* leave room at the bottom of the page so content isn't hidden by the bar */
+#form-wrap[data-active="1"] .form-body{padding-bottom:90px;}
 
 /* ── SUCCESS ── */
 #success-wrap{display:none;text-align:center;padding:60px 24px;}
@@ -782,7 +836,7 @@ textarea.field-input{resize:vertical;min-height:72px;}
         </div>
         <div class="rp-card" onclick="startForm('BAD')">
           <div class="rp-card-top"><div class="rp-icon" style="background:#0055A5;">BAD</div><div class="rp-card-meta"><span class="rp-ind-badge">105 Indicators</span></div></div>
-          <div class="rp-card-body"><div class="rp-card-title">Business Application Designer</div><div class="rp-card-desc">Functional design, documentation, testing, support, and stakeholder engagement evaluation for ERP product designers.</div></div>
+          <div class="rp-card-body"><div class="rp-card-title">Business Application Designer</div><div class="rp-card-desc">Functional design, documentation, testing, support, and stakeholder engagement evaluation — choose level: Jr., Mid, Sr., or Supervisor.</div></div>
           <div class="rp-card-footer">
             <div class="rp-parts-row"><span class="rp-part-chip">6 Parts</span><span class="rp-part-chip">5-Point Scale</span></div>
             <button class="rp-btn" style="background:#0055A5;" onclick="event.stopPropagation();startForm('BAD')">Begin Evaluation <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
@@ -836,7 +890,7 @@ textarea.field-input{resize:vertical;min-height:72px;}
             <option value="H1">H1 (January – June)</option>
             <option value="H2">H2 (July – December)</option>
           </select></div>
-          <div class="form-group" id="positionGroup"><label class="field-label">Position <span class="req" id="posReqStar" style="display:none;">*</span></label><div id="positionFieldHost"><input class="field-input" type="text" id="position" readonly style="background:#f5f5f5;color:#555;cursor:default;"/></div></div>
+          <div class="form-group" id="positionGroup" style="grid-column:1 / -1;"><label class="field-label">Position <span class="req" id="posReqStar" style="display:none;">*</span></label><div id="positionFieldHost"><input class="field-input" type="text" id="position" readonly style="background:#f5f5f5;color:#555;cursor:default;width:100%;"/></div></div>
           <div class="form-group"><label class="field-label">Department / Division / BU <span class="req">*</span></label><input class="field-input" type="text" id="department" placeholder="e.g. BU - LuzViMin" required/></div>
           <div class="form-group"><label class="field-label">Job Level</label><input class="field-input" type="text" id="jobLevel" value="Rank-and-file" readonly style="background:#f5f5f5;color:#555;cursor:default;"/></div>
         </div>
@@ -900,18 +954,10 @@ textarea.field-input{resize:vertical;min-height:72px;}
       </div>
     </div>
 
-    <div class="btn-row">
-      <button type="button" class="btn btn-outline" onclick="saveDraft()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        Save Draft
-      </button>
-      <button type="button" class="btn btn-outline" onclick="savePDF()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-        Save as PDF
-      </button>
-      <button type="submit" class="btn btn-primary" id="submitBtn">Submit Appraisal
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-      </button>
+    <div class="btn-row" style="display:none;">
+      <button type="button" class="btn btn-outline" onclick="saveDraft()">Save Draft</button>
+      <button type="button" class="btn btn-outline" onclick="savePDF()">Save as PDF</button>
+      <button type="submit" class="btn btn-primary" id="submitBtn">Submit Appraisal</button>
     </div>
 
   </form>
@@ -1591,6 +1637,23 @@ function showRoles(teamId){
 function startForm(roleKey){
   CURRENT_ROLE=roleKey;
   const role=ROLES[roleKey];
+  // ── Idempotency / clean-slate reset ─────────────────────────────────────
+  // startForm can be invoked more than once per page session (double-click
+  // on a role card, navigating back from a different role without using
+  // Change Role, slow-render retries, etc). If we don't reset state here,
+  // ALL_IDS accumulates duplicate or stale indicator IDs from prior roles,
+  // which causes the same rating to be counted multiple times in scoring
+  // and breaks the payload sent to Apps Script. Reset everything first.
+  ALL_IDS = [];
+  window._p1Score = null; window._p2Score = null;
+  window._p3Score = null; window._p4Score = null;
+  window._p5Score = null; window._p6Score = null;
+  const compSec = document.getElementById('competency-sections');
+  if (compSec) compSec.innerHTML = '';
+  const oldHero = document.getElementById('form-wrap').querySelector('.hero');
+  if (oldHero) oldHero.remove();
+  // ────────────────────────────────────────────────────────────────────────
+
   // Build hero — dynamic based on role
   const isDev = role.scale === 5;
   const isBAD = (roleKey === 'BAD');
@@ -1645,11 +1708,11 @@ function startForm(roleKey){
   document.getElementById('scale-expert-row').style.display = (role.scale === 5) ? 'flex' : 'none';
 
   // Pre-fill position (auto-filled based on role)
-  // For Developer role, render a select so user can pick the level
+  // For Developer / Designer roles, render a select so user can pick the level
   const posHost=document.getElementById('positionFieldHost');
   const posReqStar=document.getElementById('posReqStar');
   if(roleKey==='DEV'){
-    posHost.innerHTML=`<select class="field-input" id="position" required>
+    posHost.innerHTML=`<select class="field-input" id="position" required style="width:100%;">
       <option value="">— Select Software Developer Level —</option>
       <option value="Jr. Business Application Developer">Jr. Business Application Developer</option>
       <option value="Business Application Developer">Business Application Developer</option>
@@ -1657,8 +1720,17 @@ function startForm(roleKey){
       <option value="Business Application Development Supervisor">Business Application Development Supervisor</option>
     </select>`;
     if(posReqStar) posReqStar.style.display='inline';
+  }else if(roleKey==='BAD'){
+    posHost.innerHTML=`<select class="field-input" id="position" required style="width:100%;">
+      <option value="">— Select Business Application Designer Level —</option>
+      <option value="Jr. Business Application Designer">Jr. Business Application Designer</option>
+      <option value="Business Application Designer">Business Application Designer</option>
+      <option value="Sr. Business Application Designer">Sr. Business Application Designer</option>
+      <option value="Business Application Design Supervisor">Business Application Design Supervisor</option>
+    </select>`;
+    if(posReqStar) posReqStar.style.display='inline';
   }else{
-    posHost.innerHTML=`<input class="field-input" type="text" id="position" readonly style="background:#f5f5f5;color:#555;cursor:default;"/>`;
+    posHost.innerHTML=`<input class="field-input" type="text" id="position" readonly style="background:#f5f5f5;color:#555;cursor:default;width:100%;"/>`;
     document.getElementById('position').value=role.label;
     document.getElementById('position').placeholder=role.label;
     if(posReqStar) posReqStar.style.display='none';
@@ -1666,6 +1738,11 @@ function startForm(roleKey){
 
   // Build competency sections
   buildCompetencies(role);
+  // Safety net: dedupe ALL_IDS so even if a code path ever double-builds,
+  // each indicator is counted only once for scoring and payload assembly.
+  ALL_IDS = Array.from(new Set(ALL_IDS));
+  // Initial pass — show the red * on every (empty) remark so users see them upfront
+  syncRemarkStars();
 
   // Load any saved draft
   loadDraft(roleKey);
@@ -1673,18 +1750,34 @@ function startForm(roleKey){
   document.getElementById('role-picker').style.display='none';
   document.getElementById('form-wrap').style.display='block';
   document.getElementById('progress-bar-wrap').style.display='flex';
+  // Safety net: explicitly ensure the submit button is reachable and the
+  // sticky action bar is visible. Some browsers on slow CDN loads (e.g.
+  // GitHub Pages) have intermittently left things mid-render after a reload.
+  // Force a reflow + retry-check to guarantee the user can always submit.
+  // NOTE: the bottom .btn-row stays hidden by design — the sticky bar
+  // pinned to the bottom of the viewport handles all submission actions.
+  (function ensureFormReady(attempt){
+    const submitBtn = document.getElementById('submitBtn');
+    const stickyBar = document.getElementById('sticky-action-bar');
+    if(submitBtn){ submitBtn.disabled=false; }   // keep enabled, form submit needs it
+    if(stickyBar) stickyBar.classList.add('show');
+    if((!submitBtn || !stickyBar) && (attempt||0) < 5){
+      setTimeout(function(){ ensureFormReady((attempt||0)+1); }, 120);
+    }
+  })(0);
   document.getElementById('empName').addEventListener('input',function(){
     document.getElementById('sigEmployee').value=this.value;
   });
-  // When DEV position level changes, reflect it in the hero subtitle
-  if(roleKey==='DEV'){
+  // When DEV/BAD position level changes, reflect it in the hero subtitle
+  if(roleKey==='DEV' || roleKey==='BAD'){
     const posSel=document.getElementById('position');
     if(posSel){
       posSel.addEventListener('change',function(){
         const meta=document.querySelector('.hero .hero-meta');
         if(meta){
-          const lvl=this.value||'Software Developer';
-          meta.innerHTML='Infosoft Consulting Corporation &nbsp;·&nbsp; Confidential &nbsp;·&nbsp; Role: '+lvl+' (DEV)';
+          const fallback = roleKey==='DEV' ? 'Software Developer' : 'Business Application Designer';
+          const lvl=this.value||fallback;
+          meta.innerHTML='Infosoft Consulting Corporation &nbsp;·&nbsp; Confidential &nbsp;·&nbsp; Role: '+lvl+' ('+roleKey+')';
         }
       });
     }
@@ -1753,7 +1846,7 @@ function buildTable(groupId,items,scale5){
     rows+=`<tr><td class="ind-num">${numStr}</td>
       <td><div class="ind-key">${key}</div><div class="ind-desc">${desc}</div></td>
       <td>${selHTML(id,scale5)}</td>
-      <td><textarea class="remarks-inp" id="r_${id}" placeholder="Required remarks…"></textarea></td>
+      <td><div class="remark-wrap"><textarea class="remarks-inp" id="r_${id}" placeholder="Required remarks…"></textarea><span class="remark-star" aria-hidden="true">*</span></div></td>
     </tr>`;
   });
   return `<div class="ind-table-wrap"><table class="ind-table">
@@ -1838,7 +1931,7 @@ function buildBACompetencies(role){
         rows+=`<tr><td class="ind-num">${numStr}</td>
           <td><div class="ind-key">${key}</div><div class="ind-desc">${desc}</div></td>
           <td>${selHTML(id)}</td>
-          <td><textarea class="remarks-inp" id="r_${id}" placeholder="Required remarks…"></textarea></td>
+          <td><div class="remark-wrap"><textarea class="remarks-inp" id="r_${id}" placeholder="Required remarks…"></textarea><span class="remark-star" aria-hidden="true">*</span></div></td>
         </tr>`;
       });
       html+=`<div class="sub-phase-header">${sub.name}</div>
@@ -2624,12 +2717,13 @@ document.getElementById('appraisalForm').addEventListener('submit',function(e){
     }
     el.style.borderColor='';el.style.boxShadow='';
   }
-  // Developer role requires a position level selection
-  if(CURRENT_ROLE==='DEV'){
+  // Developer / Designer roles require a position level selection
+  if(CURRENT_ROLE==='DEV' || CURRENT_ROLE==='BAD'){
     const posEl=document.getElementById('position');
     if(!posEl||!posEl.value.trim()){
       if(posEl){posEl.focus();posEl.style.borderColor='#CC0000';posEl.style.boxShadow='0 0 0 3px rgba(204,0,0,.15)';}
-      alert('Please select Software Developer Position');return;
+      const label = CURRENT_ROLE==='DEV' ? 'Software Developer Position' : 'Business Application Designer Position';
+      alert('Please select '+label);return;
     }
     posEl.style.borderColor='';posEl.style.boxShadow='';
   }
@@ -2638,6 +2732,28 @@ document.getElementById('appraisalForm').addEventListener('submit',function(e){
     if(!el||el.value===''){
       if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
       alert('Please rate all indicators.\nMissing: '+id);return;
+    }
+  }
+  // Remarks are required — every indicator must have a non-empty justification.
+  // First clear any old "missing" highlights, then check each remark in order.
+  ALL_IDS.forEach(id=>{
+    const rem=document.getElementById('r_'+id);
+    if(rem) rem.classList.remove('remark-missing');
+  });
+  for(const id of ALL_IDS){
+    const rem=document.getElementById('r_'+id);
+    if(!rem||!rem.value.trim()){
+      // Resolve a friendly label so the alert is meaningful
+      const row=document.getElementById(id)?.closest('tr');
+      const keyEl=row?.querySelector('.ind-key');
+      const label=keyEl?keyEl.textContent.trim():id;
+      if(rem){
+        rem.classList.add('remark-missing');
+        rem.scrollIntoView({behavior:'smooth',block:'center'});
+        setTimeout(()=>rem.focus(),350);
+      }
+      alert('Please provide remarks for: '+label+'\n\nRemarks are required for every indicator so HR has the basis for each rating.');
+      return;
     }
   }
   const payload={
@@ -2663,7 +2779,15 @@ document.getElementById('appraisalForm').addEventListener('submit',function(e){
     submittedTimestamp:new Date().toISOString(),
   };
   ALL_IDS.forEach(id=>{
-    payload[id]=document.getElementById(id).value;
+    const el=document.getElementById(id);
+    // If the DOM element for this ID is missing, the form is in a bad state
+    // (most likely ALL_IDS was polluted by a stale build). Log a warning and
+    // skip — don't send garbage to Apps Script.
+    if(!el){
+      console.warn('[appraisal] Skipping stale ID with no DOM element:', id);
+      return;
+    }
+    payload[id]=el.value;
     const rem=document.getElementById('r_'+id);
     payload['rem_'+id]=rem?rem.value.trim():'';
   });
@@ -2677,10 +2801,16 @@ document.getElementById('appraisalForm').addEventListener('submit',function(e){
   payload.indicatorLabels=indicatorLabels;
   const btn=document.getElementById('submitBtn');
   btn.textContent='Submitting…';btn.disabled=true;
+  // Mirror state on the sticky bar's submit button so the user sees feedback
+  const stickyBtn=document.getElementById('stickySubmitBtn');
+  if(stickyBtn){ stickyBtn.textContent='Submitting…'; stickyBtn.disabled=true; }
   fetch(APPS_SCRIPT_URL,{method:'POST',body:new URLSearchParams({data:JSON.stringify(payload)}),mode:'no-cors'})
   .then(()=>{
     document.getElementById('appraisalForm').style.display='none';
     document.querySelector('.btn-row').style.display='none';
+    // Hide the sticky bar on the success screen — submission is complete
+    const sab=document.getElementById('sticky-action-bar');
+    if(sab) sab.classList.remove('show');
     const n=document.getElementById('empName').value.trim();
     document.getElementById('suc-title').textContent=(n?n+"'s ":"")+'Appraisal Submitted!';
     const refCode='ICC-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).substr(2,4).toUpperCase();
@@ -2690,7 +2820,11 @@ document.getElementById('appraisalForm').addEventListener('submit',function(e){
     formDirty=false;
     window.scrollTo({top:0,behavior:'smooth'});
   })
-  .catch(err=>{btn.textContent='Submit Appraisal';btn.disabled=false;alert('Submission failed: '+err.message);});
+  .catch(err=>{
+    btn.textContent='Submit Appraisal';btn.disabled=false;
+    if(stickyBtn){ stickyBtn.textContent='Submit Appraisal'; stickyBtn.disabled=false; }
+    alert('Submission failed: '+err.message);
+  });
 });
 
 // ── Progress Bar ──
@@ -2740,6 +2874,8 @@ function loadDraft(roleKey){
         if(id.startsWith('p1_')||id.startsWith('p2_')||id.startsWith('p3_')||id.startsWith('p4_')||id.startsWith('p5_')||id.startsWith('p6_')){ const sel=document.getElementById(id); if(sel&&val) styleSelect(sel); }
       });
       updateScores();
+      // Restored remarks should not show the red * — re-sync overlays
+      syncRemarkStars();
     }, 300);
   } catch(e){ console.warn('Draft load failed:',e); }
 }
@@ -2769,12 +2905,97 @@ window.addEventListener('beforeunload', function(e){
   }
 });
 
+// ── Clear "missing remark" highlight as soon as the user starts typing ──
+document.addEventListener('input', function(e){
+  if(e.target && e.target.classList && e.target.classList.contains('remarks-inp')){
+    e.target.classList.remove('remark-missing');
+    syncRemarkStars(e.target);
+  }
+});
+
+// Toggle the inline "*" overlay on a remark wrap based on the textarea content.
+// Called from the input listener above and from initial-render / draft-restore.
+function syncRemarkStars(textareaOrAll){
+  const targets = textareaOrAll && textareaOrAll.tagName
+    ? [textareaOrAll]
+    : document.querySelectorAll('.remarks-inp');
+  targets.forEach(ta=>{
+    const wrap = ta.closest('.remark-wrap');
+    if(!wrap) return;
+    if(ta.value && ta.value.trim() !== '') wrap.classList.add('has-content');
+    else wrap.classList.remove('has-content');
+  });
+}
+
+// ── Clear red border on required top-of-form fields the moment they're filled ──
+// Covers Employee Name, Appraisal Period, Position (DEV), Department/Div/BU,
+// Project Involvement, Evaluator Email, Evaluator name — anything the submit
+// handler flags red. Fires on both typed input and select/dropdown changes.
+(function(){
+  const REQ_IDS = ['empName','appraisalPeriod','position','department','projectInvolvement','emailAddress','sigSupervisor'];
+  function clearReq(el){
+    if(!el) return;
+    if(el.value && String(el.value).trim() !== ''){
+      el.style.borderColor='';
+      el.style.boxShadow='';
+    }
+  }
+  // 'input' covers typing in text inputs and textareas
+  document.addEventListener('input', function(e){
+    if(e.target && REQ_IDS.indexOf(e.target.id) !== -1) clearReq(e.target);
+  });
+  // 'change' covers select dropdowns (Appraisal Period, DEV Position)
+  document.addEventListener('change', function(e){
+    if(e.target && REQ_IDS.indexOf(e.target.id) !== -1) clearReq(e.target);
+  });
+})();
 
 
 
 
 
 
+
+</script>
+
+<!-- ── STICKY ACTION BAR — always-visible Submit (mirrors bottom buttons) ── -->
+<div id="sticky-action-bar">
+  <div class="sab-status">
+    <span id="sab-status-text">Complete all indicators to enable submit</span>
+  </div>
+  <button type="button" class="btn btn-outline" onclick="saveDraft()">Save Draft</button>
+  <button type="button" class="btn btn-outline" onclick="savePDF()">Save as PDF</button>
+  <button type="button" class="btn btn-primary" id="stickySubmitBtn" onclick="document.getElementById('submitBtn').click()">Submit Appraisal</button>
+</div>
+
+<script>
+// ── Show/hide sticky bar when form is active ──
+(function(){
+  function syncStickyBar(){
+    const bar = document.getElementById('sticky-action-bar');
+    const wrap = document.getElementById('form-wrap');
+    const form = document.getElementById('appraisalForm');
+    if(!bar || !wrap || !form) return;
+    const formVisible = wrap.style.display === 'block' && form.style.display !== 'none';
+    bar.classList.toggle('show', formVisible);
+    if(formVisible) wrap.setAttribute('data-active','1'); else wrap.removeAttribute('data-active');
+  }
+  // Run whenever DOM changes that could affect visibility
+  const obs = new MutationObserver(syncStickyBar);
+  document.addEventListener('DOMContentLoaded', function(){
+    const wrap = document.getElementById('form-wrap');
+    if(wrap) obs.observe(wrap, { attributes:true, attributeFilter:['style'] });
+    syncStickyBar();
+  });
+  // Update sticky bar status text when ratings change
+  document.addEventListener('change', function(){
+    const lbl = document.getElementById('progress-bar-label');
+    const st = document.getElementById('sab-status-text');
+    if(lbl && st && document.getElementById('sticky-action-bar').classList.contains('show')){
+      st.innerHTML = '<strong>' + lbl.textContent + '</strong>';
+    }
+  });
+})();
 </script>
 </body>
 </html>
