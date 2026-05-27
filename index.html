@@ -2905,6 +2905,107 @@ window.addEventListener('beforeunload', function(e){
   }
 });
 
+// ── DEV / TEST AUTOFILL ──────────────────────────────────────────────────
+// When the URL contains ?autofill=ROLE the form pre-fills itself with sample
+// data so you can submit without typing. Used by the test-runner page.
+// Patterns supported:
+//   pattern=all4   → every rating set to 4 (Advanced)
+//   pattern=all5   → every rating set to 5 (Expert, 5-pt roles only)
+//   pattern=mixed  → spread across 1–5 by indicator index (default)
+//   pattern=mixed5 → spread across 1–5 (5-pt scale)
+// Optional: &level=N to pick a Dev/Designer level (1..4)
+(function autofillFromURL(){
+  const params = new URLSearchParams(window.location.search);
+  const role = (params.get('autofill') || '').toUpperCase();
+  if(!role || !['BAA','BAC','SRBAC','DEV','BAD'].includes(role)) return;
+  const pattern = params.get('pattern') || 'mixed';
+  const level   = parseInt(params.get('level') || '2', 10); // 1..4
+
+  // Wait for DOMContentLoaded so role-picker is rendered, then drive it.
+  function go(){
+    try {
+      startForm(role);
+    } catch(e){ console.error('autofill startForm failed', e); return; }
+
+    // Give buildCompetencies a moment to finish appending DOM
+    setTimeout(function(){
+      // 1) Fill top-of-form fields
+      const fill = (id, val) => {
+        const el = document.getElementById(id);
+        if(el){
+          el.value = val;
+          // trigger change/input so dependent code (live-clear, sigEmployee sync) fires
+          el.dispatchEvent(new Event('input',  {bubbles:true}));
+          el.dispatchEvent(new Event('change', {bubbles:true}));
+        }
+      };
+      fill('empName', 'AUTO TEST — '+role+' '+new Date().toLocaleString('en-PH'));
+      fill('appraisalPeriod', 'H1');
+      fill('department', 'BU - LuzViMin (TEST)');
+      fill('projectInvolvement', 'Autofilled test submission for the '+role+' role — used to verify end-to-end pipeline (form → Apps Script → Sheet → email).');
+      fill('emailAddress', params.get('email') || 'autofill-test@infosoft.com.ph');
+      fill('sigSupervisor', 'AUTO Evaluator');
+      // Position dropdown — DEV / BAD only
+      if(role === 'DEV'){
+        const opts = [
+          'Jr. Business Application Developer',
+          'Business Application Developer',
+          'Sr. Business Application Developer',
+          'Business Application Development Supervisor'
+        ];
+        fill('position', opts[Math.max(0,Math.min(3,level-1))]);
+      } else if(role === 'BAD'){
+        const opts = [
+          'Jr. Business Application Designer',
+          'Business Application Designer',
+          'Sr. Business Application Designer',
+          'Business Application Design Supervisor'
+        ];
+        fill('position', opts[Math.max(0,Math.min(3,level-1))]);
+      }
+
+      // 2) Fill every rating + remark
+      const isFive = ROLES[role] && ROLES[role].scale === 5;
+      ALL_IDS.forEach((id, idx) => {
+        const sel = document.getElementById(id);
+        if(!sel) return;
+        let val;
+        if(pattern === 'all4') val = '4';
+        else if(pattern === 'all5') val = isFive ? '5' : '4';
+        else if(pattern === 'mixed5') val = String(1 + (idx % 5));   // 1..5
+        else /* mixed */ val = String(1 + (idx % 4));                // 1..4
+        sel.value = val;
+        sel.dispatchEvent(new Event('change', {bubbles:true}));
+        if(typeof styleSelect === 'function') styleSelect(sel);
+
+        const rem = document.getElementById('r_'+id);
+        if(rem){
+          rem.value = 'Autofilled remark for '+id+' (rating '+val+').';
+          rem.dispatchEvent(new Event('input', {bubbles:true}));
+        }
+      });
+      if(typeof updateScores === 'function') updateScores();
+
+      // 3) Banner so the user knows it auto-filled (no auto-submit on purpose
+      // — let them eyeball it then click Submit themselves, in case anything
+      // looks off they can stop before sending to Apps Script.)
+      const heroMeta = document.querySelector('.hero .hero-meta');
+      if(heroMeta){
+        heroMeta.insertAdjacentHTML('beforeend',
+          ' &nbsp;·&nbsp; <span style="background:#FFD400;color:#1F1F1F;padding:2px 8px;border-radius:4px;font-weight:800;font-size:11px;">AUTOFILLED — REVIEW & SUBMIT</span>');
+      }
+      // Scroll to bottom so Submit is in view
+      setTimeout(()=>window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}), 250);
+    }, 300);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', go);
+  } else {
+    setTimeout(go, 60);
+  }
+})();
+
 // ── Clear "missing remark" highlight as soon as the user starts typing ──
 document.addEventListener('input', function(e){
   if(e.target && e.target.classList && e.target.classList.contains('remarks-inp')){
