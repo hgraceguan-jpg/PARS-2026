@@ -1741,6 +1741,11 @@ function startForm(roleKey){
   // Safety net: dedupe ALL_IDS so even if a code path ever double-builds,
   // each indicator is counted only once for scoring and payload assembly.
   ALL_IDS = Array.from(new Set(ALL_IDS));
+
+  // Mark form as NOT ready until draft-restore completes — this prevents
+  // updateProgress from showing a partial/wrong count during the build phase.
+  window._formReady = false;
+
   // Initial pass — show the red * on every (empty) remark so users see them upfront
   syncRemarkStars();
 
@@ -1759,10 +1764,14 @@ function startForm(roleKey){
   (function ensureFormReady(attempt){
     const submitBtn = document.getElementById('submitBtn');
     const stickyBar = document.getElementById('sticky-action-bar');
-    if(submitBtn){ submitBtn.disabled=false; }   // keep enabled, form submit needs it
+    if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent='Submit Appraisal'; }
     if(stickyBar) stickyBar.classList.add('show');
     if((!submitBtn || !stickyBar) && (attempt||0) < 5){
       setTimeout(function(){ ensureFormReady((attempt||0)+1); }, 120);
+    } else {
+      // Form is fully ready — enable progress tracking
+      window._formReady = true;
+      updateProgress();
     }
   })(0);
   document.getElementById('empName').addEventListener('input',function(){
@@ -1799,6 +1808,28 @@ function changeRole(){
   showTeams();
   document.getElementById('success-wrap').style.display='none';
   document.getElementById('appraisalForm').style.display='block';
+
+  // ── Critical: reset submit button state so it can't fire on the next role ──
+  const submitBtn=document.getElementById('submitBtn');
+  if(submitBtn){
+    submitBtn.disabled=false;
+    submitBtn.textContent='Submit Appraisal';
+    submitBtn.style.visibility='visible';
+  }
+  const stickyBtn=document.getElementById('stickySubmitBtn');
+  if(stickyBtn){
+    stickyBtn.disabled=false;
+    stickyBtn.textContent='Submit Appraisal';
+  }
+  // Hide the sticky bar until a new role is opened
+  const sab=document.getElementById('sticky-action-bar');
+  if(sab) sab.classList.remove('show');
+
+  // ── Critical: reset formDirty so the beforeunload guard doesn't fire ──
+  formDirty=false;
+  // Reset form-ready flag so progress bar doesn't fire during next build
+  window._formReady=false;
+
   // Reset scores
   ['ob-band','ob-core','ob-func','ob-total'].forEach(id=>{
     const el=document.getElementById(id);
@@ -1811,6 +1842,13 @@ function changeRole(){
   document.getElementById('ob-sub').textContent='Part I Core (×30%) + Part II Functional (×70%)';
   document.getElementById('ob-breakdown').innerHTML='<div style="display:flex;flex-direction:column;align-items:center;"><div class="oi-val" id="ob-core">—</div><div class="oi-lbl">Core ×30%</div></div><div style="font-size:24px;color:rgba(255,255,255,.5);font-weight:300;margin:0 6px 0;">+</div><div style="display:flex;flex-direction:column;align-items:center;"><div class="oi-val" id="ob-func">—</div><div class="oi-lbl">Functional ×70%</div></div>';
   window._p1Score=null;window._p2Score=null;window._p3Score=null;window._p4Score=null;window._p5Score=null;window._p6Score=null;
+
+  // Reset progress bar to zero
+  const fill=document.getElementById('progress-bar-fill');
+  const lbl=document.getElementById('progress-bar-label');
+  if(fill){fill.style.width='0%';fill.style.background='#CC0000';}
+  if(lbl) lbl.textContent='0 / 0 rated (0%)';
+
   window.scrollTo({top:0});
 }
 
@@ -2835,7 +2873,10 @@ document.getElementById('appraisalForm').addEventListener('submit',function(e){
 
 // ── Progress Bar ──
 function updateProgress(){
-  if(!ALL_IDS.length) return;
+  // Only run once the form is fully built — prevents glitching during
+  // buildCompetencies (which pushes IDs incrementally) and during the
+  // draft-restore setTimeout where values are set programmatically.
+  if(!ALL_IDS.length || !window._formReady) return;
   const rated = ALL_IDS.filter(id=>{ const el=document.getElementById(id); return el&&el.value!==''; }).length;
   const total = ALL_IDS.length;
   const pct = Math.round((rated/total)*100);
@@ -2843,6 +2884,9 @@ function updateProgress(){
   const label = document.getElementById('progress-bar-label');
   if(fill) fill.style.width = pct+'%';
   if(label) label.textContent = rated+' / '+total+' rated ('+pct+'%)';
+  // Update sticky bar status text too
+  const st=document.getElementById('sab-status-text');
+  if(st) st.innerHTML='<strong>'+rated+' / '+total+' rated ('+pct+'%)</strong>';
   if(fill){
     if(pct===100) fill.style.background='#1A7A3C';
     else if(pct>=50) fill.style.background='#D97706';
@@ -2882,6 +2926,9 @@ function loadDraft(roleKey){
       updateScores();
       // Restored remarks should not show the red * — re-sync overlays
       syncRemarkStars();
+      // Draft restore is complete — mark form ready and update progress
+      window._formReady = true;
+      updateProgress();
     }, 300);
   } catch(e){ console.warn('Draft load failed:',e); }
 }
